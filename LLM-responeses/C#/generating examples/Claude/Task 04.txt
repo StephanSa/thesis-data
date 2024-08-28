@@ -1,0 +1,45 @@
+Help me generate code for my project. I need to write in C#. I need a File Upload and storage.EditI'd be happy to help you generate code for a file upload and storage system in C#. Let's start with a basic implementation. We'll create a simple ASP.NET Core Web API controller that handles file uploads and stores them on the server.
+Here's a basic implementation:
+csharpCopyusing Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using System;
+using System.IO;
+using System.Threading.Tasks;
+
+[ApiController]
+[Route("api/[controller]")]
+public class FileUploadController : ControllerBase
+{
+    private readonly string _uploadFolder = Path.Combine(Directory.GetCurrentDirectory(), "Uploads");
+
+    [HttpPost]
+    public async Task<IActionResult> UploadFile(IFormFile file)
+    {
+        if (file == null || file.Length == 0)
+            return BadRequest("No file uploaded.");
+
+        try
+        {
+            // Ensure the upload folder exists
+            if (!Directory.Exists(_uploadFolder))
+                Directory.CreateDirectory(_uploadFolder);
+
+            // Generate a unique filename
+            string fileName = Guid.NewGuid().ToString() + Path.GetExtension(file.FileName);
+            string filePath = Path.Combine(_uploadFolder, fileName);
+
+            // Save the file
+            using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                await file.CopyToAsync(stream);
+            }
+
+            return Ok(new { fileName });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, $"Internal server error: {ex}");
+        }
+    }
+}
+Would you like me to explain or break down this code for you?

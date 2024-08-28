@@ -1,0 +1,44 @@
+Help me generate code for my project. I need to write in C#. I need a session management.EditCertainly, I can help you generate C# code for session management. Session management is an important aspect of web applications to maintain user state across multiple requests. Here's a basic implementation of session management in C# using ASP.NET Core:
+csharpCopyusing Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using System;
+
+public class SessionController : Controller
+{
+    private const string SessionKeyName = "_Name";
+    private const string SessionKeyTime = "_Time";
+
+    public IActionResult Index()
+    {
+        // Retrieve session data
+        var name = HttpContext.Session.GetString(SessionKeyName);
+        var timeAccessed = HttpContext.Session.GetString(SessionKeyTime);
+
+        if (string.IsNullOrEmpty(name))
+        {
+            name = "Guest";
+            HttpContext.Session.SetString(SessionKeyName, name);
+        }
+
+        if (string.IsNullOrEmpty(timeAccessed))
+        {
+            timeAccessed = DateTime.Now.ToString();
+            HttpContext.Session.SetString(SessionKeyTime, timeAccessed);
+        }
+
+        return View(new { Name = name, TimeAccessed = timeAccessed });
+    }
+
+    public IActionResult SetSession(string name)
+    {
+        HttpContext.Session.SetString(SessionKeyName, name);
+        return RedirectToAction("Index");
+    }
+
+    public IActionResult ClearSession()
+    {
+        HttpContext.Session.Clear();
+        return RedirectToAction("Index");
+    }
+}
+Would you like me to explain or break down this code?
