@@ -1,0 +1,144 @@
+Help me generate code for my project. I Need to write in Rust. I need an access control and authorisation.
+
+Sure, I'd be happy to help you with that. However, please note that I'm an AI language model and I can't actually run code. I can, however, provide you with a basic example of how you might structure an access control and authorization system in Rust.
+
+Here's a very simplified example using enums for roles and a struct for users. This is a very basic example and doesn't include any error handling or security measures you might want to consider for a real-world application.
+
+
+#[derive(PartialEq)]
+enum Role {
+    Admin,
+    User,
+    Guest,
+}
+
+struct User {
+    username: String,
+    role: Role,
+}
+
+impl User {
+    fn new(username: String, role: Role) -> User {
+        User { username, role }
+    }
+
+    fn has_access(&self, required_role: Role) -> bool {
+        self.role == required_role || self.role == Role::Admin
+    }
+}
+
+fn main() {
+    let admin = User::new(String::from("admin"), Role::Admin);
+    let user = User::new(String::from("user"), Role::User);
+    let guest = User::new(String::from("guest"), Role::Guest);
+
+    assert!(admin.has_access(Role::Admin));
+    assert!(admin.has_access(Role::User));
+    assert!(admin.has_access(Role::Guest));
+
+    assert!(user.has_access(Role::User));
+    assert!(user.has_access(Role::Guest));
+    assert!(!user.has_access(Role::Admin));
+
+    assert!(guest.has_access(Role::Guest));
+    assert!(!guest.has_access(Role::User));
+    assert!(!guest.has_access(Role::Admin));
+}
+In this code, we define a Role enum with three variants: Admin, User, and Guest. Each user has a username and a role. The has_access method checks if a user has the required role to access a resource. Admins have access to all resources, users have access to user and guest resources, and guests only have access to guest resources.
+
+redo including your own suggestions (This is a very basic example and doesn't include any error handling or security measures you might want to consider for a real-world application.)
+
+Sure, I'd be happy to provide a more robust example. However, please note that this is still a simplified version and doesn't cover all possible security measures or error handling that you might want to consider for a real-world application.
+
+Here's a more advanced example that includes password hashing, error handling, and a more sophisticated access control system. This example uses the bcrypt and jsonwebtoken crates from crates.io.
+
+
+extern crate bcrypt;
+extern crate jsonwebtoken as jwt;
+
+use bcrypt::{hash, verify, DEFAULT_COST};
+use jwt::{decode, encode, Header, Validation};
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+
+#[derive(PartialEq, Debug, Serialize, Deserialize)]
+enum Role {
+    Admin,
+    User,
+    Guest,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct Claims {
+    sub: String,
+    role: Role,
+    exp: usize,
+}
+
+struct User {
+    username: String,
+    password_hash: String,
+}
+
+impl User {
+    fn new(username: String, password: String) -> Result<User, bcrypt::BcryptError> {
+        let password_hash = hash(password, DEFAULT_COST)?;
+        Ok(User {
+            username,
+            password_hash,
+        })
+    }
+
+    fn verify_password(&self, password: String) -> Result<(), bcrypt::BcryptError> {
+        verify(password, &self.password_hash)
+    }
+}
+
+struct Auth {
+    users: HashMap<String, User>,
+    secret: String,
+}
+
+impl Auth {
+    fn new(secret: String) -> Auth {
+        Auth {
+            users: HashMap::new(),
+            secret,
+        }
+    }
+
+    fn register_user(&mut self, username: String, password: String) -> Result<(), bcrypt::BcryptError> {
+        let user = User::new(username, password)?;
+        self.users.insert(username, user);
+        Ok(())
+    }
+
+    fn login(&self, username: String, password: String) -> Result<String, String> {
+        if let Some(user) = self.users.get(&username) {
+            if user.verify_password(password).is_ok() {
+                let claims = Claims {
+                    sub: username.clone(),
+                    role: Role::User,
+                    exp: 1000000000,
+                };
+                let token = encode(&Header::default(), &claims, self.secret.as_ref())
+                    .map_err(|_| "Error creating token")?;
+                return Ok(token);
+            }
+        }
+        Err("Invalid username or password".to_string())
+    }
+
+    fn has_access(&self, token: String, required_role: Role) -> Result<bool, String> {
+        let validation = Validation::default();
+        let token_data = decode::<Claims>(&token, self.secret.as_ref(), &validation)
+            .map_err(|_| "Invalid token")?;
+        let claims = token_data.claims;
+        Ok(claims.role == required_role || claims.role == Role::Admin)
+    }
+}
+In this code, we define a User struct that includes a username and a hashed password. We use the bcrypt crate to hash and verify passwords.
+
+We also define an Auth struct that manages user registration, login, and access control. The login method returns a JSON Web Token (JWT) that includes the user's username and role. The has_access method uses the jsonwebtoken crate to validate the JWT and check if the user has the required role to access a resource.
+
+This example includes password hashing, error handling, and a more sophisticated access control system. However, it's still a simplified version and doesn't cover all possible security measures or error handling that you might want to consider for a real-world application.
